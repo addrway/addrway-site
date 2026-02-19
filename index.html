@@ -177,6 +177,9 @@
   // Footer year
   document.getElementById("year").textContent = new Date().getFullYear();
 
+  // ✅ Your DigitalOcean API base URL
+  const API_BASE = "https://addrway-api-phklw.ondigitalocean.app";
+
   // Map setup
   const map = L.map('map', { zoomControl: true }).setView([37.7898, -122.3942], 14);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -191,35 +194,54 @@
   const validatedText = document.getElementById("validatedText");
   const statusText = document.getElementById("statusText");
 
+  // Geocode helper (OpenStreetMap / Nominatim)
+  async function geocodeOSM(query) {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
+    const res = await fetch(url, { headers: { "Accept": "application/json" } });
+    const data = await res.json();
+    if (!data || data.length === 0) return null;
+    return {
+      lat: parseFloat(data[0].lat),
+      lon: parseFloat(data[0].lon),
+      display: data[0].display_name
+    };
+  }
+
   validateBtn.addEventListener("click", async () => {
     const v = addressInput.value.trim();
     if (!v) return;
 
     validateBtn.disabled = true;
     validateBtn.textContent = "Validating...";
-    statusText.textContent = "Searching location...";
+    statusText.textContent = "Checking address...";
 
     try {
-      // Free geocode lookup (demo use)
-      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(v)}`;
-      const res = await fetch(url, { headers: { "Accept": "application/json" } });
-      const data = await res.json();
+      // ✅ 1) Call your DigitalOcean API (/validate)
+      const r = await fetch(`${API_BASE}/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: v })
+      });
 
-      if (!data || data.length === 0) {
-        validatedText.textContent = "No match found. Try adding city/state/ZIP.";
-        statusText.textContent = "";
+      const result = await r.json();
+
+      // ✅ 2) Use normalized result (or fallback to what user typed)
+      const normalized = result.normalized || v;
+      validatedText.textContent = normalized;
+
+      // ✅ 3) Move map to address (geocode)
+      statusText.textContent = "Searching location...";
+      const geo = await geocodeOSM(normalized);
+
+      if (!geo) {
+        statusText.textContent = "No map match found. Try adding city/state/ZIP.";
         return;
       }
 
-      const best = data[0];
-      const lat = parseFloat(best.lat);
-      const lon = parseFloat(best.lon);
+      marker.setLatLng([geo.lat, geo.lon]);
+      map.setView([geo.lat, geo.lon], 16);
 
-      validatedText.textContent = best.display_name;
-      statusText.textContent = "High-confidence match found.";
-
-      marker.setLatLng([lat, lon]);
-      map.setView([lat, lon], 16);
+      statusText.textContent = "Match found.";
 
     } catch (e) {
       console.error(e);
