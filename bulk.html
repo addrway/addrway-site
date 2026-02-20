@@ -7,24 +7,24 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .soft-shadow { box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12); }
-    .nav-shadow { box-shadow: 0 1px 0 rgba(15, 23, 42, 0.08); }
   </style>
 </head>
 
 <body class="bg-[#F7FAFF] text-slate-900">
 
-<!-- ✅ PROTECT PAGE (must be logged in) -->
-<script>
-  if (localStorage.getItem("addrway_logged_in") !== "true") {
-    window.location.href = "login.html";
-  }
-</script>
+  <!-- ✅ PROTECT PAGE (must be logged in) -->
+  <script>
+    if (localStorage.getItem("addrway_logged_in") !== "true") {
+      window.location.href = "login.html";
+    }
+  </script>
 
-<header class="bg-white nav-shadow">
-  <div class="max-w-7xl mx-auto px-6">
-    <div class="flex items-center justify-between py-4">
+  <div class="min-h-screen flex">
+
+    <!-- Sidebar (matches dashboard) -->
+    <aside class="w-64 bg-white border-r border-slate-200 px-4 py-5">
       <a href="dashboard.html" class="flex items-center gap-2 font-bold text-lg">
-        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 text-white">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-blue-600 text-white">
           <svg viewBox="0 0 24 24" fill="none" class="w-5 h-5">
             <path d="M6 7h12M6 12h12M6 17h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
@@ -32,321 +32,301 @@
         <span>Addrway</span>
       </a>
 
-      <div class="flex items-center gap-3">
-        <a href="single.html" class="hidden sm:inline text-sm text-slate-600 hover:text-blue-600">Single</a>
-        <a href="dashboard.html" class="hidden sm:inline text-sm text-slate-600 hover:text-blue-600">Dashboard</a>
+      <nav class="mt-8 space-y-1 text-sm">
+        <a href="dashboard.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">Dashboard</a>
+        <a href="single.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">Single Address</a>
 
-        <!-- ✅ Real logout -->
-        <a href="#" id="logoutBtn"
-           class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition">
-          Log out
-        </a>
+        <!-- ✅ Active page highlight -->
+        <a href="bulk.html" class="block px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-semibold">Multiple Addresses</a>
+
+        <a href="api-keys.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">API Keys</a>
+        <a href="billing.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">Billing</a>
+        <a href="subscriptions.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">Subscriptions</a>
+        <a href="profile.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">Profile</a>
+
+        <div class="pt-4 mt-4 border-t border-slate-200">
+          <a href="#" id="logoutBtn" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600">Log out</a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 px-6 py-8">
+      <div class="max-w-6xl mx-auto">
+
+        <div class="flex items-start justify-between gap-6">
+          <div>
+            <h1 class="text-3xl font-extrabold">Multiple Address Validation</h1>
+            <p class="mt-2 text-slate-600">Paste one address per line. We validate sequentially to protect the API.</p>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-2xl px-4 py-3">
+            <div class="text-xs text-slate-500">Plan</div>
+            <div id="planPill" class="text-sm font-bold">Starter</div>
+          </div>
+        </div>
+
+        <section class="mt-8 grid lg:grid-cols-2 gap-8 items-start">
+
+          <!-- Input -->
+          <div class="bg-white rounded-2xl soft-shadow border border-slate-200 p-6">
+            <div class="flex items-center justify-between">
+              <div class="font-semibold">Addresses</div>
+              <div class="text-xs text-slate-500">1 per line • Max 500/run</div>
+            </div>
+
+            <textarea
+              id="bulkInput"
+              class="mt-3 w-full border border-slate-200 rounded-xl px-4 py-3 text-sm min-h-[260px]"
+              placeholder="123 Main St, City, ST 12345&#10;456 Oak Ave, City, ST 12345&#10;..."
+            ></textarea>
+
+            <div class="mt-4 flex flex-wrap gap-3">
+              <button
+                id="runBtn"
+                class="px-5 py-3 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed">
+                Validate All
+              </button>
+
+              <button
+                id="clearBtn"
+                class="px-5 py-3 rounded-xl bg-slate-100 text-slate-700 text-sm font-semibold hover:bg-slate-200 transition">
+                Clear
+              </button>
+
+              <button
+                id="downloadBtn"
+                class="px-5 py-3 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled>
+                Download CSV
+              </button>
+            </div>
+
+            <div class="mt-5">
+              <div class="flex items-center justify-between text-xs text-slate-600">
+                <span class="font-semibold">Progress</span>
+                <span id="progressText" class="font-bold text-slate-800">0 / 0</span>
+              </div>
+              <div class="mt-2 w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div id="progressBar" class="h-2 bg-blue-600" style="width:0%"></div>
+              </div>
+              <p id="statusText" class="mt-2 text-xs text-slate-500"></p>
+            </div>
+          </div>
+
+          <!-- Results -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 overflow-hidden">
+            <div class="flex items-center justify-between">
+              <div class="font-semibold">Results</div>
+              <div id="summaryText" class="text-xs text-slate-500">No results yet.</div>
+            </div>
+
+            <div class="mt-4 overflow-auto border border-slate-100 rounded-xl">
+              <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 text-slate-600">
+                  <tr>
+                    <th class="text-left px-3 py-2">#</th>
+                    <th class="text-left px-3 py-2">Input</th>
+                    <th class="text-left px-3 py-2">Normalized</th>
+                    <th class="text-left px-3 py-2">Valid</th>
+                    <th class="text-left px-3 py-2">Confidence</th>
+                  </tr>
+                </thead>
+                <tbody id="resultsBody" class="divide-y"></tbody>
+              </table>
+            </div>
+
+            <p class="mt-3 text-xs text-slate-500">
+              Note: Sequential validation avoids overload. We’ll add true batch mode later.
+            </p>
+          </div>
+
+        </section>
+
       </div>
-    </div>
+    </main>
+
   </div>
-</header>
 
-<main class="max-w-7xl mx-auto px-6">
+  <script>
+    // ✅ Logout clears session
+    document.getElementById("logoutBtn").addEventListener("click", (e) => {
+      e.preventDefault();
+      localStorage.removeItem("addrway_logged_in");
+      window.location.href = "index.html";
+    });
 
-  <section class="pt-10 pb-6">
-    <h1 class="text-3xl sm:text-4xl font-extrabold">Multiple Address Validation</h1>
-    <p class="mt-2 text-slate-600">
-      Paste one address per line. We’ll validate them one-by-one (CSV upload next).
-    </p>
-  </section>
+    // ✅ Show plan pill (optional)
+    document.getElementById("planPill").textContent =
+      localStorage.getItem("addrway_plan_pill") || "Starter";
 
-  <section class="pb-14 grid lg:grid-cols-2 gap-8 items-start">
+    // ✅ Your API base
+    const API_BASE = "https://addrway-api-phklw.ondigitalocean.app";
 
-    <!-- Input -->
-    <div class="bg-white rounded-2xl soft-shadow border border-slate-100 p-6">
-      <div class="flex items-center justify-between">
-        <div class="font-semibold">Addresses</div>
-        <div class="text-xs text-slate-500">1 per line</div>
-      </div>
-
-      <textarea
-        id="bulkInput"
-        class="mt-3 w-full border border-slate-200 rounded-xl px-4 py-3 text-sm min-h-[260px]"
-        placeholder="123 Main St, City, ST 12345&#10;456 Oak Ave, City, ST 12345&#10;..."
-      ></textarea>
-
-      <div class="mt-4 flex flex-wrap gap-3">
-        <button
-          id="runBtn"
-          class="px-5 py-3 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed">
-          Validate All
-        </button>
-
-        <button
-          id="clearBtn"
-          class="px-5 py-3 rounded-xl bg-slate-100 text-slate-700 text-sm font-semibold hover:bg-slate-200 transition">
-          Clear
-        </button>
-
-        <button
-          id="downloadBtn"
-          class="px-5 py-3 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
-          disabled>
-          Download CSV
-        </button>
-      </div>
-
-      <div class="mt-4">
-        <div class="flex items-center justify-between text-xs text-slate-600">
-          <span class="font-semibold">Progress</span>
-          <span id="progressText" class="font-bold text-slate-800">0 / 0</span>
-        </div>
-        <div class="mt-2 w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-          <div id="progressBar" class="h-2 bg-blue-600" style="width:0%"></div>
-        </div>
-        <p id="statusText" class="mt-2 text-xs text-slate-500"></p>
-      </div>
-    </div>
-
-    <!-- Results -->
-    <div class="bg-white rounded-2xl border border-slate-200 p-6 overflow-hidden">
-      <div class="flex items-center justify-between">
-        <div class="font-semibold">Results</div>
-        <div id="summaryText" class="text-xs text-slate-500">No results yet.</div>
-      </div>
-
-      <div class="mt-4 overflow-auto border border-slate-100 rounded-xl">
-        <table class="min-w-full text-sm">
-          <thead class="bg-slate-50 text-slate-600">
-            <tr>
-              <th class="text-left px-3 py-2">#</th>
-              <th class="text-left px-3 py-2">Input</th>
-              <th class="text-left px-3 py-2">Normalized</th>
-              <th class="text-left px-3 py-2">Valid</th>
-              <th class="text-left px-3 py-2">Confidence</th>
-            </tr>
-          </thead>
-          <tbody id="resultsBody" class="divide-y"></tbody>
-        </table>
-      </div>
-
-      <p class="mt-3 text-xs text-slate-500">
-        Note: This validates sequentially to avoid overloading your API. (We can add “batch mode” later.)
-      </p>
-    </div>
-
-  </section>
-
-</main>
-
-<footer class="py-10 text-center text-sm text-slate-500">
-  © <span id="year"></span> Addrway
-</footer>
-
-<script>
-  document.getElementById("year").textContent = new Date().getFullYear();
-
-  // ✅ Real logout clears session
-  document.getElementById("logoutBtn").addEventListener("click", (e) => {
-    e.preventDefault();
-    localStorage.removeItem("addrway_logged_in");
-    window.location.href = "index.html";
-  });
-
-  // ✅ Your API base
-  const API_BASE = "https://addrway-api-phklw.ondigitalocean.app";
-
-  // ✅ Usage increment helper (adds N to monthly used count)
-  function incrementUsage(n = 1) {
-    const current = Number(localStorage.getItem("addrway_sub_used") || "0");
-    localStorage.setItem("addrway_sub_used", String(current + n));
-  }
-
-  const bulkInput = document.getElementById("bulkInput");
-  const runBtn = document.getElementById("runBtn");
-  const clearBtn = document.getElementById("clearBtn");
-  const downloadBtn = document.getElementById("downloadBtn");
-
-  const progressText = document.getElementById("progressText");
-  const progressBar = document.getElementById("progressBar");
-  const statusText = document.getElementById("statusText");
-
-  const resultsBody = document.getElementById("resultsBody");
-  const summaryText = document.getElementById("summaryText");
-
-  let results = [];
-
-  function setProgress(done, total) {
-    progressText.textContent = `${done} / ${total}`;
-    const pct = total ? Math.round((done / total) * 100) : 0;
-    progressBar.style.width = `${pct}%`;
-  }
-
-  function escapeHtml(s) {
-    return (s || "").replace(/[&<>"']/g, (c) => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    }[c]));
-  }
-
-  function addRow(i, input, normalized, valid, confidence) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td class="px-3 py-2 text-slate-500">${i}</td>
-      <td class="px-3 py-2">${escapeHtml(input)}</td>
-      <td class="px-3 py-2">${escapeHtml(normalized || "")}</td>
-      <td class="px-3 py-2">
-        <span class="px-2 py-1 rounded-full text-xs font-semibold ${valid ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}">
-          ${valid ? "Yes" : "No"}
-        </span>
-      </td>
-      <td class="px-3 py-2 font-semibold">${Number.isFinite(confidence) ? confidence + "%" : ""}</td>
-    `;
-    resultsBody.appendChild(tr);
-  }
-
-  function toCsv(rows) {
-    const header = ["index","input","normalized","valid","confidence","lat","lon"];
-    const lines = [header.join(",")];
-
-    for (const r of rows) {
-      const line = [
-        r.index,
-        `"${(r.input || "").replaceAll('"','""')}"`,
-        `"${(r.normalized || "").replaceAll('"','""')}"`,
-        r.valid ? "true" : "false",
-        Number.isFinite(r.confidence) ? r.confidence : "",
-        r.lat ?? "",
-        r.lon ?? ""
-      ].join(",");
-      lines.push(line);
+    // ✅ Usage increment helper (adds N to monthly used count)
+    function incrementUsage(n = 1) {
+      const current = Number(localStorage.getItem("addrway_sub_used") || "0");
+      localStorage.setItem("addrway_sub_used", String(current + n));
     }
-    return lines.join("\n");
-  }
 
-  function downloadText(filename, text) {
-    const blob = new Blob([text], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
+    const bulkInput = document.getElementById("bulkInput");
+    const runBtn = document.getElementById("runBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
 
-  clearBtn.addEventListener("click", () => {
-    bulkInput.value = "";
-    results = [];
-    resultsBody.innerHTML = "";
-    summaryText.textContent = "No results yet.";
-    statusText.textContent = "";
-    setProgress(0, 0);
-    downloadBtn.disabled = true;
-  });
+    const progressText = document.getElementById("progressText");
+    const progressBar = document.getElementById("progressBar");
+    const statusText = document.getElementById("statusText");
 
-  runBtn.addEventListener("click", async () => {
-    const lines = bulkInput.value
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const resultsBody = document.getElementById("resultsBody");
+    const summaryText = document.getElementById("summaryText");
 
-    if (lines.length === 0) return;
+    let results = [];
 
-    // Soft cap to protect your API
-    const MAX = 500;
-    const addresses = lines.slice(0, MAX);
+    function setProgress(done, total) {
+      progressText.textContent = `${done} / ${total}`;
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      progressBar.style.width = `${pct}%`;
+    }
 
-    results = [];
-    resultsBody.innerHTML = "";
-    downloadBtn.disabled = true;
+    function escapeHtml(s) {
+      return (s || "").replace(/[&<>"']/g, (c) => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      }[c]));
+    }
 
-    runBtn.disabled = true;
-    runBtn.textContent = "Running...";
-    statusText.textContent = "Starting...";
-    setProgress(0, addresses.length);
+    function addRow(i, input, normalized, valid, confidence) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="px-3 py-2 text-slate-500">${i}</td>
+        <td class="px-3 py-2">${escapeHtml(input)}</td>
+        <td class="px-3 py-2">${escapeHtml(normalized || "")}</td>
+        <td class="px-3 py-2">
+          <span class="px-2 py-1 rounded-full text-xs font-semibold ${valid ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}">
+            ${valid ? "Yes" : "No"}
+          </span>
+        </td>
+        <td class="px-3 py-2 font-semibold">${Number.isFinite(confidence) ? confidence + "%" : ""}</td>
+      `;
+      resultsBody.appendChild(tr);
+    }
 
-    let validCount = 0;
+    function toCsv(rows) {
+      const header = ["index","input","normalized","valid","confidence","lat","lon"];
+      const lines = [header.join(",")];
 
-    for (let idx = 0; idx < addresses.length; idx++) {
-      const input = addresses[idx];
-      const rowIndex = idx + 1;
+      for (const r of rows) {
+        const line = [
+          r.index,
+          `"${(r.input || "").replaceAll('"','""')}"`,
+          `"${(r.normalized || "").replaceAll('"','""')}"`,
+          r.valid ? "true" : "false",
+          Number.isFinite(r.confidence) ? r.confidence : "",
+          r.lat ?? "",
+          r.lon ?? ""
+        ].join(",");
+        lines.push(line);
+      }
+      return lines.join("\n");
+    }
 
-      statusText.textContent = `Validating ${rowIndex} of ${addresses.length}...`;
+    function downloadText(filename, text) {
+      const blob = new Blob([text], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
 
-      try {
-        const r = await fetch(`${API_BASE}/validate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ address: input })
-        });
+    clearBtn.addEventListener("click", () => {
+      bulkInput.value = "";
+      results = [];
+      resultsBody.innerHTML = "";
+      summaryText.textContent = "No results yet.";
+      statusText.textContent = "";
+      setProgress(0, 0);
+      downloadBtn.disabled = true;
+    });
 
-        const data = await r.json();
+    runBtn.addEventListener("click", async () => {
+      const lines = bulkInput.value
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean);
 
-        if (!r.ok) {
-          results.push({
-            index: rowIndex,
-            input,
-            normalized: "",
-            valid: false,
-            confidence: 0,
-            lat: "",
-            lon: "",
-            error: data?.error || `Status ${r.status}`
+      if (lines.length === 0) return;
+
+      const MAX = 500;
+      const addresses = lines.slice(0, MAX);
+
+      results = [];
+      resultsBody.innerHTML = "";
+      downloadBtn.disabled = true;
+
+      runBtn.disabled = true;
+      runBtn.textContent = "Running...";
+      statusText.textContent = "Starting...";
+      setProgress(0, addresses.length);
+
+      let validCount = 0;
+
+      for (let idx = 0; idx < addresses.length; idx++) {
+        const input = addresses[idx];
+        const rowIndex = idx + 1;
+
+        statusText.textContent = `Validating ${rowIndex} of ${addresses.length}...`;
+
+        try {
+          const r = await fetch(`${API_BASE}/validate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ address: input })
           });
+
+          const data = await r.json();
+
+          if (!r.ok) {
+            results.push({ index: rowIndex, input, normalized: "", valid: false, confidence: 0, lat: "", lon: "", error: data?.error || `Status ${r.status}` });
+            addRow(rowIndex, input, "", false, 0);
+          } else {
+            const valid = data.valid === true;
+            const confidence = Number(data.confidence ?? 0);
+            if (valid) validCount++;
+
+            results.push({ index: rowIndex, input, normalized: data.normalized || input, valid, confidence, lat: data.lat ?? "", lon: data.lon ?? "" });
+            addRow(rowIndex, input, data.normalized || input, valid, confidence);
+          }
+
+        } catch (e) {
+          results.push({ index: rowIndex, input, normalized: "", valid: false, confidence: 0, lat: "", lon: "", error: "Network error" });
           addRow(rowIndex, input, "", false, 0);
-        } else {
-          const valid = data.valid === true;
-          const confidence = Number(data.confidence ?? 0);
-          if (valid) validCount++;
-
-          results.push({
-            index: rowIndex,
-            input,
-            normalized: data.normalized || input,
-            valid,
-            confidence,
-            lat: data.lat ?? "",
-            lon: data.lon ?? ""
-          });
-
-          addRow(rowIndex, input, data.normalized || input, valid, confidence);
         }
 
-      } catch (e) {
-        results.push({
-          index: rowIndex,
-          input,
-          normalized: "",
-          valid: false,
-          confidence: 0,
-          lat: "",
-          lon: "",
-          error: "Network error"
-        });
-        addRow(rowIndex, input, "", false, 0);
+        setProgress(rowIndex, addresses.length);
+        await new Promise((res) => setTimeout(res, 80));
       }
 
-      setProgress(rowIndex, addresses.length);
+      summaryText.textContent = `${validCount} valid out of ${addresses.length}`;
+      statusText.textContent = "Done.";
+      downloadBtn.disabled = results.length === 0;
 
-      // tiny delay to be polite to the server
-      await new Promise((res) => setTimeout(res, 80));
-    }
+      // ✅ Increment usage ONCE after finishing (count attempts)
+      incrementUsage(addresses.length);
 
-    // ✅ Update summary
-    summaryText.textContent = `${validCount} valid out of ${addresses.length}`;
-    statusText.textContent = "Done.";
-    downloadBtn.disabled = results.length === 0;
+      runBtn.disabled = false;
+      runBtn.textContent = "Validate All";
+    });
 
-    // ✅ INCREMENT USAGE ONCE, AFTER FINISHING
-    // counts every address attempted (not just valid)
-    incrementUsage(addresses.length);
-
-    runBtn.disabled = false;
-    runBtn.textContent = "Validate All";
-  });
-
-  downloadBtn.addEventListener("click", () => {
-    if (!results.length) return;
-    const csv = toCsv(results);
-    downloadText("addrway-bulk-results.csv", csv);
-  });
-</script>
+    downloadBtn.addEventListener("click", () => {
+      if (!results.length) return;
+      const csv = toCsv(results);
+      downloadText("addrway-bulk-results.csv", csv);
+    });
+  </script>
 
 </body>
 </html>
