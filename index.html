@@ -323,3 +323,79 @@
 
 </body>
 </html>
+<script>
+  // Footer year
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  // ✅ Your DigitalOcean API base URL
+  const API_BASE = "https://addrway-api-phklw.ondigitalocean.app";
+
+  // Map setup
+  const map = L.map('map', { zoomControl: true }).setView([37.7898, -122.3942], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  let marker = L.marker([37.7898, -122.3942]).addTo(map);
+
+  const validateBtn = document.getElementById("validateBtn");
+  const addressInput = document.getElementById("addressInput");
+  const validatedText = document.getElementById("validatedText");
+  const statusText = document.getElementById("statusText");
+
+  validateBtn.addEventListener("click", async () => {
+    const v = addressInput.value.trim();
+    if (!v) return;
+
+    validateBtn.disabled = true;
+    validateBtn.textContent = "Validating...";
+    statusText.textContent = "Checking address...";
+
+    try {
+      // ✅ Call your DigitalOcean API (/validate)
+      const r = await fetch(`${API_BASE}/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: v })
+      });
+
+      if (!r.ok) {
+        throw new Error(`API error: ${r.status}`);
+      }
+
+      const result = await r.json();
+
+      // ✅ Show normalized address
+      validatedText.textContent = result.normalized || v;
+
+      // ✅ Confidence + validation status
+      const conf = typeof result.confidence === "number" ? result.confidence : null;
+      const isValid = result.valid === true;
+
+      statusText.textContent = isValid
+        ? `Valid ✅${conf !== null ? ` (confidence ${conf})` : ""}`
+        : `Not confident ⚠️${conf !== null ? ` (confidence ${conf})` : ""}`;
+
+      // ✅ Use lat/lon FROM YOUR API (no extra geocode call)
+      if (result.lat && result.lon) {
+        const lat = parseFloat(result.lat);
+        const lon = parseFloat(result.lon);
+
+        marker.setLatLng([lat, lon]);
+        map.setView([lat, lon], 16);
+      } else {
+        // If no coordinates, don’t move the map
+        statusText.textContent += " — no coordinates returned.";
+      }
+
+    } catch (e) {
+      console.error(e);
+      validatedText.textContent = "Lookup failed. Please try again.";
+      statusText.textContent = "";
+    } finally {
+      validateBtn.disabled = false;
+      validateBtn.textContent = "Validate";
+    }
+  });
+</script>
