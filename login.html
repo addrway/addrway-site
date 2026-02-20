@@ -8,6 +8,13 @@
 
 <body class="bg-gray-100 text-gray-900">
 
+  <!-- ✅ Auto redirect if already logged in -->
+  <script>
+    if (localStorage.getItem("addrway_logged_in") === "true") {
+      window.location.href = "dashboard.html";
+    }
+  </script>
+
   <div class="min-h-screen flex items-center justify-center">
 
     <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
@@ -16,18 +23,24 @@
         Login to Addrway
       </h2>
 
-      <form>
+      <!-- ✅ Added id -->
+      <form id="loginForm">
         <div class="mb-4">
           <label class="block mb-1 text-sm font-medium">Email</label>
-          <input type="email" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="you@example.com">
+          <input type="email" required
+            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            placeholder="you@example.com">
         </div>
 
         <div class="mb-6">
           <label class="block mb-1 text-sm font-medium">Password</label>
-          <input type="password" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="••••••••">
+          <input type="password" required
+            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            placeholder="••••••••">
         </div>
 
-        <button class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+        <button type="submit"
+          class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">
           Login
         </button>
       </form>
@@ -40,6 +53,19 @@
     </div>
 
   </div>
+
+  <!-- ✅ Login Script -->
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      // Simulate authentication success
+      localStorage.setItem("addrway_logged_in", "true");
+
+      // Redirect to dashboard
+      window.location.href = "dashboard.html";
+    });
+  </script>
 
 </body>
 </html>
