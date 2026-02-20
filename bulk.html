@@ -57,7 +57,7 @@
         <div class="flex items-start justify-between gap-6">
           <div>
             <h1 class="text-3xl font-extrabold">Multiple Address Validation</h1>
-            <p class="mt-2 text-slate-600">Paste one address per line. We validate sequentially to protect the API.</p>
+            <p class="mt-2 text-slate-600">Paste one address per line or upload a CSV. We validate sequentially to protect the API.</p>
           </div>
 
           <div class="bg-white border border-slate-200 rounded-2xl px-4 py-3">
@@ -72,12 +72,54 @@
           <div class="bg-white rounded-2xl soft-shadow border border-slate-200 p-6">
             <div class="flex items-center justify-between">
               <div class="font-semibold">Addresses</div>
-              <div class="text-xs text-slate-500">1 per line • Max 500/run</div>
+              <div class="text-xs text-slate-500">1 per line • Max 1000/run</div>
             </div>
+
+            <!-- ✅ CSV Upload -->
+            <div class="mt-4 rounded-2xl border border-slate-200 p-4 bg-slate-50">
+              <div class="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <div class="text-sm font-semibold">Upload CSV</div>
+                  <div class="text-xs text-slate-600 mt-1">
+                    Upload a CSV and choose the address column if needed. Loads up to <b>1,000</b> rows (anything above is ignored).
+                  </div>
+                </div>
+                <label class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold hover:bg-slate-100 cursor-pointer">
+                  Choose file
+                  <input id="csvFile" type="file" accept=".csv,text/csv" class="hidden" />
+                </label>
+              </div>
+
+              <div class="mt-3 flex items-center gap-3 flex-wrap">
+                <div id="csvColumnWrap" class="hidden">
+                  <label class="text-xs text-slate-600 font-semibold mr-2">Address column</label>
+                  <select id="csvColumn" class="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white"></select>
+                </div>
+
+                <button id="loadCsvBtn"
+                  class="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled>
+                  Load into box
+                </button>
+
+                <button id="appendCsvBtn"
+                  class="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-300 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled>
+                  Append
+                </button>
+
+                <div id="csvHint" class="text-xs text-slate-600"></div>
+              </div>
+
+              <p class="mt-2 text-xs text-slate-500">
+                Tip: If your CSV has columns like <b>Address</b>, <b>Street</b>, or <b>Full Address</b>, pick that column.
+              </p>
+            </div>
+            <!-- ✅ /CSV Upload -->
 
             <textarea
               id="bulkInput"
-              class="mt-3 w-full border border-slate-200 rounded-xl px-4 py-3 text-sm min-h-[260px]"
+              class="mt-4 w-full border border-slate-200 rounded-xl px-4 py-3 text-sm min-h-[260px]"
               placeholder="123 Main St, City, ST 12345&#10;456 Oak Ave, City, ST 12345&#10;..."
             ></textarea>
 
@@ -163,6 +205,9 @@
     // ✅ Your API base
     const API_BASE = "https://addrway-api-phklw.ondigitalocean.app";
 
+    // ✅ HARD CAP
+    const MAX_LINES = 1000;
+
     // ✅ Usage increment helper (adds N to monthly used count)
     function incrementUsage(n = 1) {
       const current = Number(localStorage.getItem("addrway_sub_used") || "0");
@@ -181,8 +226,104 @@
     const resultsBody = document.getElementById("resultsBody");
     const summaryText = document.getElementById("summaryText");
 
+    // CSV elements
+    const csvFile = document.getElementById("csvFile");
+    const csvColumnWrap = document.getElementById("csvColumnWrap");
+    const csvColumn = document.getElementById("csvColumn");
+    const loadCsvBtn = document.getElementById("loadCsvBtn");
+    const appendCsvBtn = document.getElementById("appendCsvBtn");
+    const csvHint = document.getElementById("csvHint");
+
     let results = [];
 
+    // ---- CSV parse helpers (simple but effective) ----
+    function splitCsvLine(line) {
+      const out = [];
+      let cur = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            cur += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (ch === "," && !inQuotes) {
+          out.push(cur);
+          cur = "";
+        } else {
+          cur += ch;
+        }
+      }
+      out.push(cur);
+      return out.map(s => s.trim());
+    }
+
+    function parseCsv(text) {
+      const lines = text
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n")
+        .split("\n")
+        .filter(l => l.trim() !== "");
+
+      if (!lines.length) return { headers: [], rows: [] };
+
+      const first = splitCsvLine(lines[0]);
+      const second = lines[1] ? splitCsvLine(lines[1]) : [];
+
+      const looksLikeHeader =
+        first.some(v => /address|street|city|state|zip|postal/i.test(v)) &&
+        second.some(v => /\d/.test(v));
+
+      const headers = looksLikeHeader ? first : first.map((_, i) => `Column ${i + 1}`);
+      const startIdx = looksLikeHeader ? 1 : 0;
+
+      const rows = [];
+      for (let i = startIdx; i < lines.length; i++) {
+        rows.push(splitCsvLine(lines[i]));
+      }
+
+      return { headers, rows };
+    }
+
+    let parsedCsv = { headers: [], rows: [] };
+
+    function buildColumnPicker(headers) {
+      csvColumn.innerHTML = "";
+      headers.forEach((h, i) => {
+        const opt = document.createElement("option");
+        opt.value = String(i);
+        opt.textContent = h || `Column ${i + 1}`;
+        csvColumn.appendChild(opt);
+      });
+
+      // Smart default if we can guess "Address" column
+      const idx = headers.findIndex(h => /full\s*address|address/i.test(h));
+      if (idx >= 0) csvColumn.value = String(idx);
+    }
+
+    function extractAddressesFromParsed(limit = MAX_LINES) {
+      if (!parsedCsv.rows.length) return [];
+
+      let colIndex = 0;
+      if (!csvColumnWrap.classList.contains("hidden")) {
+        colIndex = Number(csvColumn.value || "0");
+      }
+
+      const addrs = [];
+      for (const row of parsedCsv.rows) {
+        const cell = (row[colIndex] || "").trim();
+        if (cell) addrs.push(cell);
+        if (addrs.length >= limit) break;
+      }
+
+      return addrs;
+    }
+
+    // ---- UI helpers ----
     function setProgress(done, total) {
       progressText.textContent = `${done} / ${total}`;
       const pct = total ? Math.round((done / total) * 100) : 0;
@@ -242,6 +383,59 @@
       URL.revokeObjectURL(url);
     }
 
+    // ---- CSV handlers ----
+    csvFile.addEventListener("change", async () => {
+      const file = csvFile.files && csvFile.files[0];
+      if (!file) return;
+
+      csvHint.textContent = "Reading file...";
+      loadCsvBtn.disabled = true;
+      appendCsvBtn.disabled = true;
+
+      const text = await file.text();
+      parsedCsv = parseCsv(text);
+
+      if (!parsedCsv.rows.length) {
+        csvHint.textContent = "No rows found in CSV.";
+        csvColumnWrap.classList.add("hidden");
+        return;
+      }
+
+      buildColumnPicker(parsedCsv.headers);
+      csvColumnWrap.classList.remove("hidden");
+      loadCsvBtn.disabled = false;
+      appendCsvBtn.disabled = false;
+
+      const totalRows = parsedCsv.rows.length;
+      if (totalRows > MAX_LINES) {
+        csvHint.textContent = `CSV has ${totalRows} rows — only the first ${MAX_LINES} will be used.`;
+      } else {
+        csvHint.textContent = `CSV loaded: ${totalRows} rows. Choose the address column.`;
+      }
+    });
+
+    loadCsvBtn.addEventListener("click", () => {
+      const addrs = extractAddressesFromParsed(MAX_LINES);
+      bulkInput.value = addrs.join("\n");
+      csvHint.textContent = `Loaded ${addrs.length} addresses into the box (max ${MAX_LINES}).`;
+    });
+
+    appendCsvBtn.addEventListener("click", () => {
+      const addrs = extractAddressesFromParsed(MAX_LINES);
+      const existing = bulkInput.value.trim();
+      const merged = (existing ? existing.split("\n").map(s => s.trim()).filter(Boolean) : []);
+
+      // Append while enforcing MAX_LINES total
+      for (const a of addrs) {
+        if (merged.length >= MAX_LINES) break;
+        merged.push(a);
+      }
+
+      bulkInput.value = merged.join("\n");
+      csvHint.textContent = `Appended addresses. Box now has ${merged.length} lines (max ${MAX_LINES}).`;
+    });
+
+    // ---- Clear ----
     clearBtn.addEventListener("click", () => {
       bulkInput.value = "";
       results = [];
@@ -252,6 +446,7 @@
       downloadBtn.disabled = true;
     });
 
+    // ---- Validate ----
     runBtn.addEventListener("click", async () => {
       const lines = bulkInput.value
         .split("\n")
@@ -260,8 +455,12 @@
 
       if (lines.length === 0) return;
 
-      const MAX = 500;
-      const addresses = lines.slice(0, MAX);
+      const addresses = lines.slice(0, MAX_LINES);
+
+      // Optional warning if user pasted too many
+      if (lines.length > MAX_LINES) {
+        statusText.textContent = `You entered ${lines.length} lines — only the first ${MAX_LINES} will be processed.`;
+      }
 
       results = [];
       resultsBody.innerHTML = "";
@@ -269,7 +468,7 @@
 
       runBtn.disabled = true;
       runBtn.textContent = "Running...";
-      statusText.textContent = "Starting...";
+      if (!statusText.textContent) statusText.textContent = `Starting... (max ${MAX_LINES})`;
       setProgress(0, addresses.length);
 
       let validCount = 0;
@@ -321,6 +520,7 @@
       runBtn.textContent = "Validate All";
     });
 
+    // ---- Download results ----
     downloadBtn.addEventListener("click", () => {
       if (!results.length) return;
       const csv = toCsv(results);
