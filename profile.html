@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Addrway — Profile</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .soft-shadow { box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12); }
+  </style>
+</head>
+
+<body class="bg-[#F7FAFF] text-slate-900">
+
+  <!-- ✅ PROTECT PAGE (must be logged in) -->
+  <script>
+    if (localStorage.getItem("addrway_logged_in") !== "true") {
+      window.location.href = "login.html";
+    }
+  </script>
+
+  <div class="min-h-screen flex">
+
+    <!-- Sidebar (matches dashboard/bulk) -->
+    <aside class="w-64 bg-white border-r border-slate-200 px-4 py-5">
+      <a href="dashboard.html" class="flex items-center gap-2 font-bold text-lg">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-blue-600 text-white">
+          <svg viewBox="0 0 24 24" fill="none" class="w-5 h-5">
+            <path d="M6 7h12M6 12h12M6 17h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span>Addrway</span>
+      </a>
+
+      <nav class="mt-8 space-y-1 text-sm">
+        <a href="dashboard.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">Dashboard</a>
+        <a href="single.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">Single Address</a>
+        <a href="bulk.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">Multiple Addresses</a>
+        <a href="api-keys.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">API Keys</a>
+        <a href="billing.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">Billing</a>
+        <a href="subscriptions.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">Subscriptions</a>
+
+        <!-- ✅ Active page highlight -->
+        <a href="profile.html" class="block px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-semibold">Profile</a>
+
+        <div class="pt-4 mt-4 border-t border-slate-200">
+          <a href="#" id="logoutBtn" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600">Log out</a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 px-6 py-8">
+      <div class="max-w-5xl mx-auto">
+
+        <div class="flex items-start justify-between gap-6">
+          <div>
+            <h1 class="text-3xl font-extrabold">Profile</h1>
+            <p class="mt-2 text-slate-600">Update your account details (temporary local storage until real auth).</p>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-2xl px-4 py-3">
+            <div class="text-xs text-slate-500">Plan</div>
+            <div id="planPill" class="text-sm font-bold">Starter</div>
+          </div>
+        </div>
+
+        <!-- Profile card -->
+        <section class="mt-8">
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 soft-shadow">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <div class="text-sm text-slate-500">Signed in as</div>
+                <div id="whoami" class="text-xl font-extrabold text-slate-900">Customer</div>
+                <div id="whoamiEmail" class="text-sm text-slate-600 mt-1">—</div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+                  Local Demo Auth
+                </span>
+              </div>
+            </div>
+
+            <hr class="my-6 border-slate-200" />
+
+            <form id="profileForm" class="grid md:grid-cols-2 gap-5">
+              <div>
+                <label class="block text-sm font-semibold text-slate-700">Full Name</label>
+                <input id="nameInput" type="text"
+                  class="mt-2 w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Luis Vazquez" />
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-slate-700">Email</label>
+                <input id="emailInput" type="email"
+                  class="mt-2 w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="you@example.com" />
+                <p class="mt-2 text-xs text-slate-500">For now, this is display-only. Real auth will lock this down.</p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-slate-700">Company (optional)</label>
+                <input id="companyInput" type="text"
+                  class="mt-2 w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Addrway Customer LLC" />
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-slate-700">Phone (optional)</label>
+                <input id="phoneInput" type="tel"
+                  class="mt-2 w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="(555) 555-5555" />
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-slate-700">Default Output Format</label>
+                <select id="formatSelect"
+                  class="mt-2 w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  <option value="single_line">Single line (USPS style) — 1600 Amphitheatre Pkwy, Mountain View, CA 94043</option>
+                  <option value="multi_line">Multi-line — Street / City State ZIP</option>
+                  <option value="components">Components — separate fields</option>
+                </select>
+                <p class="mt-2 text-xs text-slate-500">We’ll use this later to standardize output in Single + Bulk tools.</p>
+              </div>
+
+              <div class="md:col-span-2 flex items-center gap-3 flex-wrap">
+                <button type="submit"
+                  class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition">
+                  Save Profile
+                </button>
+
+                <button type="button" id="resetBtn"
+                  class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-slate-100 text-slate-700 text-sm font-semibold hover:bg-slate-200 transition">
+                  Reset
+                </button>
+
+                <span id="saveMsg" class="text-sm font-semibold"></span>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- Danger zone -->
+        <section class="mt-8">
+          <div class="bg-white rounded-2xl border border-slate-200 p-6">
+            <h2 class="text-lg font-extrabold text-slate-900">Danger Zone</h2>
+            <p class="mt-2 text-sm text-slate-600">
+              These actions affect your local demo data in this browser only.
+            </p>
+
+            <div class="mt-5 flex flex-wrap gap-3">
+              <button id="clearProfileBtn"
+                class="px-5 py-3 rounded-xl bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 transition">
+                Clear Profile Data
+              </button>
+
+              <button id="wipeAllBtn"
+                class="px-5 py-3 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition">
+                Wipe All Local Data
+              </button>
+            </div>
+
+            <p class="mt-3 text-xs text-slate-500">
+              “Wipe All” clears usage, plan info, and login session — you’ll be sent back to Login.
+            </p>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    // ✅ Logout clears session
+    document.getElementById("logoutBtn").addEventListener("click", (e) => {
+      e.preventDefault();
+      localStorage.removeItem("addrway_logged_in");
+      window.location.href = "index.html";
+    });
+
+    // ✅ Plan pill
+    document.getElementById("planPill").textContent =
+      localStorage.getItem("addrway_plan_pill") || "Starter";
+
+    // ---- Keys used for profile storage ----
+    const K_NAME = "addrway_user_name";
+    const K_EMAIL = "addrway_user_email";
+    const K_COMPANY = "addrway_user_company";
+    const K_PHONE = "addrway_user_phone";
+    const K_FORMAT = "addrway_pref_format";
+
+    const whoami = document.getElementById("whoami");
+    const whoamiEmail = document.getElementById("whoamiEmail");
+
+    const nameInput = document.getElementById("nameInput");
+    const emailInput = document.getElementById("emailInput");
+    const companyInput = document.getElementById("companyInput");
+    const phoneInput = document.getElementById("phoneInput");
+    const formatSelect = document.getElementById("formatSelect");
+
+    const profileForm = document.getElementById("profileForm");
+    const resetBtn = document.getElementById("resetBtn");
+    const saveMsg = document.getElementById("saveMsg");
+
+    const clearProfileBtn = document.getElementById("clearProfileBtn");
+    const wipeAllBtn = document.getElementById("wipeAllBtn");
+
+    function loadProfile() {
+      const name = localStorage.getItem(K_NAME) || "Customer";
+      const email = localStorage.getItem(K_EMAIL) || "";
+      const company = localStorage.getItem(K_COMPANY) || "";
+      const phone = localStorage.getItem(K_PHONE) || "";
+      const format = localStorage.getItem(K_FORMAT) || "single_line";
+
+      whoami.textContent = name || "Customer";
+      whoamiEmail.textContent = email || "—";
+
+      nameInput.value = name === "Customer" ? "" : name;
+      emailInput.value = email;
+      companyInput.value = company;
+      phoneInput.value = phone;
+      formatSelect.value = format;
+
+      saveMsg.textContent = "";
+    }
+
+    function flash(msg, colorClass) {
+      saveMsg.className = "text-sm font-semibold " + (colorClass || "text-slate-700");
+      saveMsg.textContent = msg;
+      setTimeout(() => { saveMsg.textContent = ""; }, 2200);
+    }
+
+    profileForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      const company = companyInput.value.trim();
+      const phone = phoneInput.value.trim();
+      const format = formatSelect.value;
+
+      // Store
+      localStorage.setItem(K_NAME, name || "Customer");
+      localStorage.setItem(K_EMAIL, email || "");
+      localStorage.setItem(K_COMPANY, company || "");
+      localStorage.setItem(K_PHONE, phone || "");
+      localStorage.setItem(K_FORMAT, format || "single_line");
+
+      // Update header display
+      whoami.textContent = name || "Customer";
+      whoamiEmail.textContent = email || "—";
+
+      flash("Saved!", "text-green-700");
+    });
+
+    resetBtn.addEventListener("click", () => {
+      loadProfile();
+      flash("Reset.", "text-slate-600");
+    });
+
+    clearProfileBtn.addEventListener("click", () => {
+      if (!confirm("Clear profile fields (name/email/company/phone/preferences)?")) return;
+
+      localStorage.removeItem(K_NAME);
+      localStorage.removeItem(K_EMAIL);
+      localStorage.removeItem(K_COMPANY);
+      localStorage.removeItem(K_PHONE);
+      localStorage.removeItem(K_FORMAT);
+
+      loadProfile();
+      flash("Profile cleared.", "text-amber-700");
+    });
+
+    wipeAllBtn.addEventListener("click", () => {
+      if (!confirm("Wipe ALL local data (usage/plan/login/profile)? You will be logged out.")) return;
+
+      localStorage.clear();
+      window.location.href = "login.html";
+    });
+
+    loadProfile();
+  </script>
+</body>
+</html>
