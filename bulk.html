@@ -13,6 +13,13 @@
 
 <body class="bg-[#F7FAFF] text-slate-900">
 
+<!-- ✅ PROTECT PAGE (must be logged in) -->
+<script>
+  if (localStorage.getItem("addrway_logged_in") !== "true") {
+    window.location.href = "login.html";
+  }
+</script>
+
 <header class="bg-white nav-shadow">
   <div class="max-w-7xl mx-auto px-6">
     <div class="flex items-center justify-between py-4">
@@ -28,7 +35,10 @@
       <div class="flex items-center gap-3">
         <a href="single.html" class="hidden sm:inline text-sm text-slate-600 hover:text-blue-600">Single</a>
         <a href="dashboard.html" class="hidden sm:inline text-sm text-slate-600 hover:text-blue-600">Dashboard</a>
-        <a href="index.html" class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition">
+
+        <!-- ✅ Real logout -->
+        <a href="#" id="logoutBtn"
+           class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition">
           Log out
         </a>
       </div>
@@ -131,7 +141,21 @@
 <script>
   document.getElementById("year").textContent = new Date().getFullYear();
 
+  // ✅ Real logout clears session
+  document.getElementById("logoutBtn").addEventListener("click", (e) => {
+    e.preventDefault();
+    localStorage.removeItem("addrway_logged_in");
+    window.location.href = "index.html";
+  });
+
+  // ✅ Your API base
   const API_BASE = "https://addrway-api-phklw.ondigitalocean.app";
+
+  // ✅ Usage increment helper (adds N to monthly used count)
+  function incrementUsage(n = 1) {
+    const current = Number(localStorage.getItem("addrway_sub_used") || "0");
+    localStorage.setItem("addrway_sub_used", String(current + n));
+  }
 
   const bulkInput = document.getElementById("bulkInput");
   const runBtn = document.getElementById("runBtn");
@@ -304,9 +328,14 @@
       await new Promise((res) => setTimeout(res, 80));
     }
 
+    // ✅ Update summary
     summaryText.textContent = `${validCount} valid out of ${addresses.length}`;
     statusText.textContent = "Done.";
     downloadBtn.disabled = results.length === 0;
+
+    // ✅ INCREMENT USAGE ONCE, AFTER FINISHING
+    // counts every address attempted (not just valid)
+    incrementUsage(addresses.length);
 
     runBtn.disabled = false;
     runBtn.textContent = "Validate All";
