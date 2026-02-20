@@ -5,18 +5,229 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Addrway — Billing</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .soft-shadow { box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12); }
+  </style>
 </head>
-<body class="bg-[#F7FAFF] text-slate-900">
-  <div class="max-w-3xl mx-auto px-6 py-10">
-    <a class="text-sm text-blue-600" href="dashboard.html">← Back to Dashboard</a>
-    <h1 class="mt-4 text-3xl font-extrabold">Billing</h1>
-    <p class="mt-2 text-slate-600">Placeholder page. Next step: connect Stripe + show plan status.</p>
 
-    <div class="mt-6 bg-white border border-slate-200 rounded-2xl p-6">
-      <div class="text-sm font-semibold">Plan</div>
-      <div class="mt-2 text-2xl font-extrabold">Starter</div>
-      <p class="mt-2 text-slate-600 text-sm">5,000 validations/month</p>
-    </div>
+<body class="bg-[#F7FAFF] text-slate-900">
+
+  <!-- ✅ Protect page -->
+  <script>
+    if (localStorage.getItem("addrway_logged_in") !== "true") {
+      window.location.href = "login.html";
+    }
+  </script>
+
+  <div class="min-h-screen flex">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-slate-200 px-4 py-5">
+      <a href="dashboard.html" class="flex items-center gap-2 font-bold text-lg">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-blue-600 text-white">
+          <svg viewBox="0 0 24 24" fill="none" class="w-5 h-5">
+            <path d="M6 7h12M6 12h12M6 17h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span>Addrway</span>
+      </a>
+
+      <nav class="mt-8 space-y-1 text-sm">
+        <a href="dashboard.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">Dashboard</a>
+        <a href="single.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">Single Address</a>
+        <a href="bulk.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">Multiple Addresses</a>
+        <a href="api-keys.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">API Keys</a>
+        <a href="billing.html" class="block px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-semibold">Billing</a>
+
+        <div class="pt-4 mt-4 border-t border-slate-200">
+          <a href="#" id="logoutBtn" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600">Log out</a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 px-6 py-8">
+      <div class="max-w-6xl mx-auto">
+
+        <div class="flex items-start justify-between gap-6">
+          <div>
+            <h1 class="text-3xl font-extrabold">Billing</h1>
+            <p class="mt-2 text-slate-600">Your plan, usage, and next billing cycle.</p>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-2xl px-4 py-3">
+            <div class="text-xs text-slate-500">Plan</div>
+            <div id="planPill" class="text-sm font-bold">Starter</div>
+          </div>
+        </div>
+
+        <!-- Billing Summary -->
+        <section class="mt-8 grid lg:grid-cols-3 gap-6">
+
+          <!-- Monthly Price -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 soft-shadow">
+            <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide">Monthly price</div>
+            <div class="mt-2 text-4xl font-extrabold" id="priceText">$—</div>
+            <div class="mt-2 text-sm text-slate-500">Billed monthly</div>
+          </div>
+
+          <!-- Next Billing Cycle -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 soft-shadow">
+            <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide">Next billing cycle</div>
+            <div class="mt-2 text-xl font-bold" id="nextBillText">—</div>
+            <div class="mt-2 text-sm text-slate-500">Auto-renews unless canceled</div>
+          </div>
+
+          <!-- Subscription Status -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 soft-shadow">
+            <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide">Subscription</div>
+            <div class="mt-2 text-xl font-bold" id="subStatusText">Active</div>
+            <div class="mt-2 text-sm text-slate-500">
+              Expires: <span id="expiresText" class="font-semibold text-slate-700">—</span>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- Usage Like Dashboard -->
+        <section class="mt-8">
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 soft-shadow">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-sm font-semibold">US Address Verification Usage</div>
+                <div class="text-xs text-slate-500">This cycle</div>
+              </div>
+              <div class="text-sm font-bold">
+                <span id="usedInline">0</span> of <span id="limitInline">0</span>
+              </div>
+            </div>
+
+            <div class="mt-3 w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div id="usedBar" class="h-2 bg-blue-600" style="width: 0%"></div>
+            </div>
+
+            <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
+              <span id="pctInline">0%</span>
+              <span>Resets next cycle</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- (Optional) Payment / Invoice placeholders -->
+        <section class="mt-8 grid md:grid-cols-2 gap-6">
+          <div class="bg-white border border-slate-200 rounded-2xl p-6">
+            <div class="text-sm font-semibold">Payment Method</div>
+            <p class="mt-2 text-sm text-slate-600">Placeholder until Stripe customer portal is connected.</p>
+            <button disabled class="mt-4 px-4 py-2 rounded-xl bg-slate-200 text-slate-500 font-semibold cursor-not-allowed">
+              Manage payment method (Coming Soon)
+            </button>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-2xl p-6">
+            <div class="text-sm font-semibold">Invoices</div>
+            <p class="mt-2 text-sm text-slate-600">Placeholder until Stripe invoices are connected.</p>
+            <button disabled class="mt-4 px-4 py-2 rounded-xl bg-slate-200 text-slate-500 font-semibold cursor-not-allowed">
+              View invoices (Coming Soon)
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
   </div>
+
+  <script>
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", function(e) {
+      e.preventDefault();
+      localStorage.removeItem("addrway_logged_in");
+      window.location.href = "index.html";
+    });
+
+    // Helpers
+    function numberWithCommas(x) {
+      const n = Number(x);
+      if (!Number.isFinite(n)) return String(x ?? "");
+      return n.toLocaleString();
+    }
+
+    function clamp(n, min, max) {
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function fmtDateTime(iso) {
+      try {
+        const d = new Date(iso);
+        return d.toLocaleString(undefined, {
+          month: "short",
+          day: "2-digit",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit"
+        });
+      } catch {
+        return "—";
+      }
+    }
+
+    function fmtDateOnly(iso) {
+      try {
+        const d = new Date(iso);
+        return d.toLocaleDateString(undefined, {
+          month: "short",
+          day: "2-digit",
+          year: "numeric"
+        });
+      } catch {
+        return "—";
+      }
+    }
+
+    // If you only store "expiresAt", we can treat that as next billing cycle date.
+    // Or store addrway_next_billing directly if you want.
+    function calcNextBilling(expiresAt) {
+      if (!expiresAt) return "";
+      return expiresAt;
+    }
+
+    function loadBilling() {
+      // Pull from localStorage (same pattern as dashboard)
+      const planPill = localStorage.getItem("addrway_plan_pill") || "Starter";
+
+      const expiresAt = localStorage.getItem("addrway_sub_expiresAt") || "";
+      const used = Number(localStorage.getItem("addrway_sub_used") || "0");
+      const limit = Number(localStorage.getItem("addrway_sub_limit") || "1000");
+
+      // NEW: store price (or default by plan)
+      const storedPrice = localStorage.getItem("addrway_price_monthly"); // ex: "19"
+      const price = storedPrice ? Number(storedPrice) : (planPill.toLowerCase() === "basic" ? 9 : 19);
+
+      // Next billing: either stored or derived
+      const storedNext = localStorage.getItem("addrway_next_billing");
+      const nextBilling = storedNext || calcNextBilling(expiresAt);
+
+      // Fill UI
+      document.getElementById("planPill").textContent = planPill;
+      document.getElementById("priceText").textContent = `$${numberWithCommas(price)}/mo`;
+      document.getElementById("expiresText").textContent = expiresAt ? fmtDateTime(expiresAt) : "—";
+      document.getElementById("nextBillText").textContent = nextBilling ? fmtDateOnly(nextBilling) : "—";
+
+      // Status
+      document.getElementById("subStatusText").textContent = "Active";
+
+      // Usage
+      document.getElementById("usedInline").textContent = numberWithCommas(used);
+      document.getElementById("limitInline").textContent = numberWithCommas(limit);
+
+      const pct = limit > 0 ? (used / limit) * 100 : 0;
+      const pctClamped = clamp(pct, 0, 100);
+      document.getElementById("pctInline").textContent = `${pctClamped.toFixed(1)}%`;
+      document.getElementById("usedBar").style.width = `${pctClamped}%`;
+    }
+
+    loadBilling();
+  </script>
+
 </body>
 </html>
