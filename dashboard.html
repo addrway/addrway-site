@@ -11,6 +11,14 @@
 </head>
 
 <body class="bg-[#F7FAFF] text-slate-900">
+
+  <!-- ✅ PROTECT DASHBOARD (must be logged in) -->
+  <script>
+    if (localStorage.getItem("addrway_logged_in") !== "true") {
+      window.location.href = "login.html";
+    }
+  </script>
+
   <div class="min-h-screen flex">
 
     <!-- Sidebar -->
@@ -32,7 +40,8 @@
         <a href="billing.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700">Billing</a>
 
         <div class="pt-4 mt-4 border-t border-slate-200">
-          <a href="index.html" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600">Log out</a>
+          <!-- ✅ Logout button -->
+          <a href="#" id="logoutBtn" class="block px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600">Log out</a>
         </div>
       </nav>
     </aside>
@@ -147,16 +156,14 @@
   </div>
 
   <script>
-    // ---- Temporary: localStorage data (placeholder until real auth/Stripe) ----
-    // You can set these after checkout, or manually for testing.
-    //
-    // localStorage.setItem("addrway_sub_expiresAt", "2026-04-02T04:37:00.000Z");
-    // localStorage.setItem("addrway_sub_used", "1");
-    // localStorage.setItem("addrway_sub_limit", "1000");
-    // localStorage.setItem("addrway_plan_name", "Core");
-    // localStorage.setItem("addrway_plan_type", "Cloud License");
-    // localStorage.setItem("addrway_plan_pill", "Starter");
+    // ✅ Logout clears "session"
+    document.getElementById("logoutBtn").addEventListener("click", function(e) {
+      e.preventDefault();
+      localStorage.removeItem("addrway_logged_in");
+      window.location.href = "index.html";
+    });
 
+    // ---- Temporary: localStorage data (placeholder until real auth/Stripe) ----
     function fmtDateTime(iso) {
       try {
         const d = new Date(iso);
@@ -202,7 +209,6 @@
       const offset = CIRC - (pctClamped / 100) * CIRC;
       ring.style.strokeDashoffset = String(offset);
 
-      // Also fill the simple bar (optional section)
       const usageInline = document.getElementById("usageInline");
       const usageInlineLimit = document.getElementById("usageInlineLimit");
       const usageInlineBar = document.getElementById("usageInlineBar");
@@ -234,7 +240,7 @@
       setUsageRing(used, limit);
     }
 
-    // Optional helper: call this from single.html / bulk.html to increment usage
+    // Optional helper for tools
     window.addrwayIncrementUsage = function (n = 1) {
       const current = Number(localStorage.getItem("addrway_sub_used") || "0");
       localStorage.setItem("addrway_sub_used", String(current + n));
