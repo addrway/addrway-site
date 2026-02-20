@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Addrway — Single Address</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    .soft-shadow { box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12); }
+    .nav-shadow { box-shadow: 0 1px 0 rgba(15, 23, 42, 0.08); }
+  </style>
+</head>
+
+<body class="bg-[#F7FAFF] text-slate-900">
+
+<header class="bg-white nav-shadow">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="flex items-center justify-between py-4">
+      <a href="dashboard.html" class="flex items-center gap-2 font-bold text-lg">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 text-white">
+          <svg viewBox="0 0 24 24" fill="none" class="w-5 h-5">
+            <path d="M6 7h12M6 12h12M6 17h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span>Addrway</span>
+      </a>
+
+      <div class="flex items-center gap-3">
+        <a href="dashboard.html" class="hidden sm:inline text-sm text-slate-600 hover:text-blue-600">Dashboard</a>
+        <a href="bulk.html" class="hidden sm:inline text-sm text-slate-600 hover:text-blue-600">Multiple</a>
+        <a href="index.html" class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition">
+          Log out
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-6">
+
+  <section class="pt-10 pb-6">
+    <h1 class="text-3xl sm:text-4xl font-extrabold">Single Address Validation</h1>
+    <p class="mt-2 text-slate-600">Type an address, pick a suggestion, and validate.</p>
+  </section>
+
+  <section class="pb-14 grid lg:grid-cols-2 gap-8 items-start">
+
+    <!-- Tool -->
+    <div class="bg-white rounded-2xl soft-shadow border border-slate-100 p-5">
+
+      <div class="flex gap-3">
+        <div class="relative w-full">
+          <input
+            id="addressInput"
+            class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm"
+            value="1600 Amphitheatre Parkway, Mountain View, CA 94043"
+            placeholder="Start typing an address..."
+            autocomplete="off"
+          />
+
+          <div
+            id="suggestions"
+            class="absolute z-50 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-lg hidden max-h-72 overflow-auto"
+          ></div>
+        </div>
+
+        <button
+          id="validateBtn"
+          class="px-5 py-3 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed">
+          Validate
+        </button>
+      </div>
+
+      <div class="mt-4 rounded-2xl overflow-hidden border border-slate-100">
+        <div id="map" style="height: 260px;"></div>
+      </div>
+
+      <div class="mt-4 bg-blue-50 border border-blue-100 rounded-2xl p-4">
+        <div class="font-semibold">Validated Address</div>
+        <p id="validatedText" class="mt-1 text-sm text-slate-600">
+          Enter an address and click Validate.
+        </p>
+        <p id="statusText" class="mt-1 text-xs text-slate-500"></p>
+
+        <div id="detailsWrap" class="mt-3 hidden">
+          <div class="flex items-center justify-between text-xs text-slate-600">
+            <span class="font-semibold">Confidence</span>
+            <span id="confidenceText" class="font-bold text-slate-800"></span>
+          </div>
+
+          <div class="mt-2 w-full bg-blue-100 rounded-full h-2 overflow-hidden">
+            <div id="confidenceBar" class="h-2 bg-blue-600" style="width: 0%"></div>
+          </div>
+
+          <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+            <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2">
+              <span>Street #</span><span id="cHouse" class="font-bold"></span>
+            </div>
+            <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2">
+              <span>Street</span><span id="cRoad" class="font-bold"></span>
+            </div>
+            <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2">
+              <span>City</span><span id="cCity" class="font-bold"></span>
+            </div>
+            <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2">
+              <span>State</span><span id="cState" class="font-bold"></span>
+            </div>
+            <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2 col-span-2">
+              <span>ZIP</span><span id="cZip" class="font-bold"></span>
+            </div>
+          </div>
+
+          <p id="verdictText" class="mt-3 text-xs font-semibold"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Side panel -->
+    <aside class="space-y-6">
+      <div class="bg-white rounded-2xl border border-slate-200 p-6">
+        <div class="text-sm font-semibold text-slate-800">Tip</div>
+        <p class="mt-2 text-sm text-slate-600">
+          For fastest results: pick a suggestion first, then hit Validate.
+        </p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 p-6">
+        <div class="text-sm font-semibold text-slate-800">Next</div>
+        <p class="mt-2 text-sm text-slate-600">Need to validate many? Use Multiple Addresses.</p>
+        <a href="bulk.html" class="mt-4 inline-flex px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition">
+          Open Multiple Tool
+        </a>
+      </div>
+    </aside>
+
+  </section>
+
+</main>
+
+<footer class="py-10 text-center text-sm text-slate-500">
+  © <span id="year"></span> Addrway
+</footer>
+
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  const API_BASE = "https://addrway-api-phklw.ondigitalocean.app";
+
+  // Map setup
+  const map = L.map('map', { zoomControl: true }).setView([37.7898, -122.3942], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  let marker = L.marker([37.7898, -122.3942]).addTo(map);
+
+  const validateBtn = document.getElementById("validateBtn");
+  const addressInput = document.getElementById("addressInput");
+  const validatedText = document.getElementById("validatedText");
+  const statusText = document.getElementById("statusText");
+
+  // Autocomplete
+  const suggestionsBox = document.getElementById("suggestions");
+  let debounceTimer = null;
+
+  function showSuggestions() { suggestionsBox.classList.remove("hidden"); }
+  function hideSuggestions() { suggestionsBox.classList.add("hidden"); }
+
+  async function fetchSuggestions(q) {
+    const url =
+      "https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=8&q=" +
+      encodeURIComponent(q);
+    const res = await fetch(url, { headers: { "Accept": "application/json" } });
+    return res.json();
+  }
+
+  function renderSuggestions(items) {
+    if (!items || items.length === 0) {
+      suggestionsBox.innerHTML = `<div class="px-4 py-3 text-sm text-slate-500">No matches found</div>`;
+      showSuggestions();
+      return;
+    }
+    suggestionsBox.innerHTML = items.map((item) => {
+      const label = item.display_name;
+      return `
+        <button
+          type="button"
+          class="w-full text-left px-4 py-3 hover:bg-slate-50 border-b last:border-b-0"
+          data-label="${encodeURIComponent(label)}"
+          data-lat="${item.lat}"
+          data-lon="${item.lon}"
+        >
+          <div class="text-sm text-slate-900">${label}</div>
+        </button>
+      `;
+    }).join("");
+    showSuggestions();
+  }
+
+  addressInput.addEventListener("input", () => {
+    const q = addressInput.value.trim();
+    clearTimeout(debounceTimer);
+
+    if (q.length < 3) {
+      hideSuggestions();
+      return;
+    }
+
+    debounceTimer = setTimeout(async () => {
+      try {
+        const data = await fetchSuggestions(q);
+        renderSuggestions(data);
+      } catch (e) {
+        suggestionsBox.innerHTML = `<div class="px-4 py-3 text-sm text-red-600">Error loading suggestions</div>`;
+        showSuggestions();
+      }
+    }, 300);
+  });
+
+  suggestionsBox.addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+
+    const label = decodeURIComponent(btn.dataset.label);
+    const lat = parseFloat(btn.dataset.lat);
+    const lon = parseFloat(btn.dataset.lon);
+
+    addressInput.value = label;
+    hideSuggestions();
+
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      marker.setLatLng([lat, lon]);
+      map.setView([lat, lon], 16);
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("#suggestions") && e.target !== addressInput) hideSuggestions();
+  });
+
+  addressInput.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") hideSuggestions();
+    if (e.key === "Enter") validateBtn.click();
+  });
+
+  // UI refs
+  const detailsWrap = document.getElementById("detailsWrap");
+  const confidenceText = document.getElementById("confidenceText");
+  const confidenceBar = document.getElementById("confidenceBar");
+  const cHouse = document.getElementById("cHouse");
+  const cRoad = document.getElementById("cRoad");
+  const cCity = document.getElementById("cCity");
+  const cState = document.getElementById("cState");
+  const cZip = document.getElementById("cZip");
+  const verdictText = document.getElementById("verdictText");
+
+  function checkMark(v) { return v ? "✓" : "—"; }
+
+  validateBtn.addEventListener("click", async () => {
+    const v = addressInput.value.trim();
+    if (!v) return;
+
+    hideSuggestions();
+
+    validateBtn.disabled = true;
+    validateBtn.textContent = "Validating...";
+    statusText.textContent = "Checking full address...";
+    detailsWrap.classList.add("hidden");
+
+    try {
+      const r = await fetch(`${API_BASE}/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: v })
+      });
+
+      const result = await r.json();
+
+      if (!r.ok) {
+        validatedText.textContent = "API error.";
+        statusText.textContent = result?.error || `Status ${r.status}`;
+        return;
+      }
+
+      validatedText.textContent = result.normalized || v;
+
+      const confidence = Number(result.confidence ?? 0);
+      confidenceText.textContent = `${confidence}%`;
+      confidenceBar.style.width = `${Math.max(0, Math.min(100, confidence))}%`;
+
+      const comps = result.components || {};
+      cHouse.textContent = checkMark(!!comps.house_number);
+      cRoad.textContent  = checkMark(!!comps.road);
+      cCity.textContent  = checkMark(!!(comps.city || comps.town || comps.village));
+      cState.textContent = checkMark(!!comps.state);
+      cZip.textContent   = comps.postcode || "—";
+
+      const isValid = result.valid === true;
+      verdictText.textContent = isValid
+        ? "✅ Looks like a full address match."
+        : "⚠️ Not enough components for a confident match.";
+      verdictText.className = "mt-3 text-xs font-semibold " + (isValid ? "text-green-700" : "text-amber-700");
+
+      detailsWrap.classList.remove("hidden");
+
+      const lat = parseFloat(result.lat);
+      const lon = parseFloat(result.lon);
+
+      if (Number.isFinite(lat) && Number.isFinite(lon)) {
+        marker.setLatLng([lat, lon]);
+        map.setView([lat, lon], 16);
+        statusText.textContent = isValid ? "Match found." : "Partial match found.";
+      } else {
+        statusText.textContent = isValid
+          ? "Match found (no coordinates returned)."
+          : "Partial match (no coordinates returned).";
+      }
+
+    } catch (e) {
+      console.error(e);
+      validatedText.textContent = "Lookup failed. Please try again.";
+      statusText.textContent = "";
+      detailsWrap.classList.add("hidden");
+    } finally {
+      validateBtn.disabled = false;
+      validateBtn.textContent = "Validate";
+    }
+  });
+</script>
+
+</body>
+</html>
