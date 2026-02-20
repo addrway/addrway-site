@@ -49,9 +49,60 @@
 
           <div class="bg-white border border-slate-200 rounded-2xl px-4 py-3">
             <div class="text-xs text-slate-500">Plan</div>
-            <div class="text-sm font-bold">Starter</div>
+            <div id="planPill" class="text-sm font-bold">Starter</div>
           </div>
         </div>
+
+        <!-- ✅ Subscription Card (Expires + Usage Gauge) -->
+        <section class="mt-8">
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 soft-shadow">
+            <div class="flex items-start justify-between gap-6 flex-col lg:flex-row">
+              <div>
+                <div class="text-slate-900 text-2xl sm:text-3xl font-extrabold leading-tight">
+                  US Address<br/>Verification
+                </div>
+
+                <div class="mt-2 text-sm text-slate-500">
+                  <span id="planName">Core</span> Edition • <span id="planType">Cloud License</span>
+                </div>
+
+                <div class="mt-6">
+                  <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Expires</div>
+                  <div id="expiresText" class="text-lg font-bold text-slate-900">—</div>
+                </div>
+              </div>
+
+              <!-- Usage Gauge -->
+              <div class="min-w-[240px] flex flex-col items-center">
+                <div class="relative w-44 h-44">
+                  <svg viewBox="0 0 120 120" class="w-full h-full">
+                    <circle cx="60" cy="60" r="46" fill="none" stroke="#E9EEF7" stroke-width="10" />
+                    <circle
+                      id="usageRing"
+                      cx="60" cy="60" r="46" fill="none"
+                      stroke="#2563EB" stroke-width="10"
+                      stroke-linecap="round"
+                      stroke-dasharray="289"
+                      stroke-dashoffset="289"
+                      transform="rotate(-90 60 60)"
+                    />
+                  </svg>
+
+                  <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <div class="text-xs text-slate-500 font-semibold">Used</div>
+                    <div id="usedText" class="text-3xl font-extrabold text-slate-900">0</div>
+                    <div id="pctText" class="text-sm text-slate-500 font-semibold">0%</div>
+                  </div>
+                </div>
+
+                <div class="mt-2 w-full flex items-center justify-between text-xs text-slate-500">
+                  <span id="minText">0</span>
+                  <span id="limitText">1,000</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <!-- Cards -->
         <div class="mt-8 grid md:grid-cols-3 gap-6">
@@ -76,17 +127,17 @@
 
         </div>
 
-        <!-- Usage -->
+        <!-- ✅ Optional: Keep your simple Usage bar too (now auto-fills) -->
         <div class="mt-8 bg-white border border-slate-200 rounded-2xl p-6">
           <div class="flex items-center justify-between">
             <div>
               <div class="text-sm font-semibold">Usage</div>
-              <div class="text-xs text-slate-500">Placeholder until we add real tracking</div>
+              <div class="text-xs text-slate-500">Temporary local tracking (until Stripe/backend)</div>
             </div>
-            <div class="text-sm font-bold">1,000 / 5,000</div>
+            <div class="text-sm font-bold"><span id="usageInline">0</span> / <span id="usageInlineLimit">0</span></div>
           </div>
           <div class="mt-3 w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-            <div class="h-2 bg-blue-600" style="width: 20%"></div>
+            <div id="usageInlineBar" class="h-2 bg-blue-600" style="width: 0%"></div>
           </div>
         </div>
 
@@ -94,5 +145,103 @@
     </main>
 
   </div>
+
+  <script>
+    // ---- Temporary: localStorage data (placeholder until real auth/Stripe) ----
+    // You can set these after checkout, or manually for testing.
+    //
+    // localStorage.setItem("addrway_sub_expiresAt", "2026-04-02T04:37:00.000Z");
+    // localStorage.setItem("addrway_sub_used", "1");
+    // localStorage.setItem("addrway_sub_limit", "1000");
+    // localStorage.setItem("addrway_plan_name", "Core");
+    // localStorage.setItem("addrway_plan_type", "Cloud License");
+    // localStorage.setItem("addrway_plan_pill", "Starter");
+
+    function fmtDateTime(iso) {
+      try {
+        const d = new Date(iso);
+        return d.toLocaleString(undefined, {
+          month: "short",
+          day: "2-digit",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit"
+        });
+      } catch {
+        return "—";
+      }
+    }
+
+    function numberWithCommas(x) {
+      const n = Number(x);
+      if (!Number.isFinite(n)) return String(x ?? "");
+      return n.toLocaleString();
+    }
+
+    function clamp(n, min, max) {
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function setUsageRing(used, limit) {
+      const ring = document.getElementById("usageRing");
+      const usedText = document.getElementById("usedText");
+      const pctText = document.getElementById("pctText");
+      const limitText = document.getElementById("limitText");
+
+      const u = Number(used) || 0;
+      const l = Number(limit) || 0;
+
+      usedText.textContent = numberWithCommas(u);
+      limitText.textContent = numberWithCommas(l || 0);
+
+      const pct = l > 0 ? (u / l) * 100 : 0;
+      const pctClamped = clamp(pct, 0, 100);
+      pctText.textContent = `${pctClamped.toFixed(1)}%`;
+
+      const CIRC = 289;
+      const offset = CIRC - (pctClamped / 100) * CIRC;
+      ring.style.strokeDashoffset = String(offset);
+
+      // Also fill the simple bar (optional section)
+      const usageInline = document.getElementById("usageInline");
+      const usageInlineLimit = document.getElementById("usageInlineLimit");
+      const usageInlineBar = document.getElementById("usageInlineBar");
+
+      if (usageInline) usageInline.textContent = numberWithCommas(u);
+      if (usageInlineLimit) usageInlineLimit.textContent = numberWithCommas(l || 0);
+      if (usageInlineBar) usageInlineBar.style.width = `${pctClamped}%`;
+    }
+
+    function loadSubscriptionCard() {
+      const expiresAt = localStorage.getItem("addrway_sub_expiresAt") || "";
+      const used = localStorage.getItem("addrway_sub_used") || "0";
+      const limit = localStorage.getItem("addrway_sub_limit") || "1000";
+
+      const planName = localStorage.getItem("addrway_plan_name") || "Core";
+      const planType = localStorage.getItem("addrway_plan_type") || "Cloud License";
+      const planPill = localStorage.getItem("addrway_plan_pill") || "Starter";
+
+      const planNameEl = document.getElementById("planName");
+      const planTypeEl = document.getElementById("planType");
+      const planPillEl = document.getElementById("planPill");
+      const expiresEl = document.getElementById("expiresText");
+
+      if (planNameEl) planNameEl.textContent = planName;
+      if (planTypeEl) planTypeEl.textContent = planType;
+      if (planPillEl) planPillEl.textContent = planPill;
+      if (expiresEl) expiresEl.textContent = expiresAt ? fmtDateTime(expiresAt) : "—";
+
+      setUsageRing(used, limit);
+    }
+
+    // Optional helper: call this from single.html / bulk.html to increment usage
+    window.addrwayIncrementUsage = function (n = 1) {
+      const current = Number(localStorage.getItem("addrway_sub_used") || "0");
+      localStorage.setItem("addrway_sub_used", String(current + n));
+      loadSubscriptionCard();
+    };
+
+    loadSubscriptionCard();
+  </script>
 </body>
 </html>
